@@ -1,25 +1,22 @@
 "use client"
-import { useState } from "react"
 
-const supabase = (() => {
-  if (typeof window !== 'undefined') {
-    const { createBrowserClient } = require('@supabase/ssr')
-    return createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-  }
-  return null
-})()
+import { useState } from "react"
+import { createBrowserClient } from '@supabase/ssr'
 
 export default function LoginPage() {
   const [error, setError] = useState("")
+  
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   const signIn = async () => {
-    if (!supabase) return
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { 
+        redirectTo: `${window.location.origin}/auth/callback` 
+      },
     })
     if (error) setError(error.message)
   }
@@ -57,7 +54,6 @@ export default function LoginPage() {
           Prompt Chain Tool
         </h1>
         <p style={{color: '#d1d5db', marginBottom: '1.5rem'}}>Manage Humor Flavors</p>
-        
         {error && (
           <div style={{
             background: 'rgba(239, 68, 68, 0.1)',
@@ -70,7 +66,6 @@ export default function LoginPage() {
             {error}
           </div>
         )}
-
         <button
           onClick={signIn}
           style={{

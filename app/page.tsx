@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createBrowserClient } from '@supabase/ssr';
+import { useRouter } from 'next/navigation';
 import {
   getHumorFlavors,
   createHumorFlavor,
@@ -52,6 +54,15 @@ interface Caption {
 }
 
 export default function HumorFlavorsPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
+
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
   const [flavors, setFlavors] = useState<HumorFlavor[]>([]);
   const [steps, setSteps] = useState<HumorFlavorStep[]>([]);
@@ -90,6 +101,23 @@ export default function HumorFlavorsPage() {
   const [testResults, setTestResults] = useState<any>(null);
   const [testError, setTestError] = useState<string | null>(null);
 
+  // Check auth on mount
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.push('/login');
+      } else {
+        setUser(session.user);
+        setAuthLoading(false);
+      }
+    });
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
   useEffect(() => {
     if (theme === 'dark') {
       document.body.classList.add('dark');
@@ -105,9 +133,11 @@ export default function HumorFlavorsPage() {
   }, [theme]);
 
   useEffect(() => {
-    loadFlavors();
-    loadImages();
-  }, []);
+    if (!authLoading) {
+      loadFlavors();
+      loadImages();
+    }
+  }, [authLoading]);
 
   useEffect(() => {
     if (selectedFlavorId && activeTab === 'captions') {
@@ -327,6 +357,10 @@ export default function HumorFlavorsPage() {
     }
   }
 
+  if (authLoading) {
+    return <div style={{padding: '20px', textAlign: 'center'}}>Loading...</div>;
+  }
+
   return (
     <div>
       <div className="header">
@@ -335,15 +369,20 @@ export default function HumorFlavorsPage() {
             <h1>🎭 Prompt Chain Tool</h1>
             <p>Manage humor flavors and steps</p>
           </div>
-          <div className="theme-toggle">
-            <button onClick={() => setTheme('light')} className={`theme-btn ${theme === 'light' ? 'active' : ''}`}>
-              ☀️ Light
-            </button>
-            <button onClick={() => setTheme('dark')} className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}>
-              🌙 Dark
-            </button>
-            <button onClick={() => setTheme('system')} className={`theme-btn ${theme === 'system' ? 'active' : ''}`}>
-              💻 System
+          <div style={{display: 'flex', gap: '15px', alignItems: 'center'}}>
+            <div className="theme-toggle">
+              <button onClick={() => setTheme('light')} className={`theme-btn ${theme === 'light' ? 'active' : ''}`}>
+                ☀️ Light
+              </button>
+              <button onClick={() => setTheme('dark')} className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}>
+                🌙 Dark
+              </button>
+              <button onClick={() => setTheme('system')} className={`theme-btn ${theme === 'system' ? 'active' : ''}`}>
+                💻 System
+              </button>
+            </div>
+            <button onClick={handleLogout} className="btn btn-red" style={{whiteSpace: 'nowrap'}}>
+              Logout
             </button>
           </div>
         </div>
@@ -433,50 +472,49 @@ export default function HumorFlavorsPage() {
                     </td>
                     <td>{new Date(flavor.created_datetime_utc).toLocaleDateString()}</td>
                     <td>
-  <div className="action-buttons">
-    {editingFlavorId === flavor.id ? (
-      <>
-        <button onClick={() => handleUpdateFlavor(flavor.id)} className="action-btn action-btn-green">
-          Save
-        </button>
-        <button onClick={() => setEditingFlavorId(null)} className="action-btn">
-          Cancel
-        </button>
-      </>
-    ) : (
-      <>
-        <button
-          onClick={() => {
-            setEditingFlavorId(flavor.id);
-            setEditFlavorData({ description: flavor.description, slug: flavor.slug });
-          }}
-          className="action-btn action-btn-blue"
-        >
-          Edit
-        </button>
-        <button
-        onClick={() => {
-            setSelectedFlavorId(flavor.id);
-            loadStepsForFlavor(flavor.id);
-    // Scroll to steps section after a tiny delay to let it render
-            setTimeout(() => {
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: 'smooth'
-      });
-    }, 100);
-  }}
-  className="action-btn action-btn-purple"
->
-  View Steps
-</button>
-        <button onClick={() => handleDeleteFlavor(flavor.id)} className="action-btn action-btn-red">
-          Delete
-        </button>
-      </>
-    )}
-  </div>
-</td>
+                      <div className="action-buttons">
+                        {editingFlavorId === flavor.id ? (
+                          <>
+                            <button onClick={() => handleUpdateFlavor(flavor.id)} className="action-btn action-btn-green">
+                              Save
+                            </button>
+                            <button onClick={() => setEditingFlavorId(null)} className="action-btn">
+                              Cancel
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => {
+                                setEditingFlavorId(flavor.id);
+                                setEditFlavorData({ description: flavor.description, slug: flavor.slug });
+                              }}
+                              className="action-btn action-btn-blue"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => {
+                                setSelectedFlavorId(flavor.id);
+                                loadStepsForFlavor(flavor.id);
+                                setTimeout(() => {
+                                  document.getElementById('steps-section')?.scrollIntoView({ 
+                                    behavior: 'smooth',
+                                    block: 'start'
+                                  });
+                                }, 100);
+                              }}
+                              className="action-btn action-btn-purple"
+                            >
+                              View Steps
+                            </button>
+                            <button onClick={() => handleDeleteFlavor(flavor.id)} className="action-btn action-btn-red">
+                              Delete
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -485,7 +523,7 @@ export default function HumorFlavorsPage() {
         </div>
 
         {selectedFlavorId && (
-          <div style={{marginTop: '40px', paddingTop: '40px', borderTop: '2px solid #e5e7eb'}}>
+          <div id="steps-section" style={{marginTop: '40px', paddingTop: '40px', borderTop: '2px solid #e5e7eb'}}>
             <h2 style={{marginBottom: '20px'}}>
               {flavors.find((f) => f.id === selectedFlavorId)?.slug}
             </h2>
@@ -625,22 +663,22 @@ export default function HumorFlavorsPage() {
                             )}
                           </td>
                           <td>
-<div className="action-buttons">
-    {editingStepId === step.id ? (
-      <>
-        <button onClick={() => handleUpdateStep(step.id)} className="action-btn action-btn-green">Save</button>
-        <button onClick={() => setEditingStepId(null)} className="action-btn">Cancel</button>
-      </>
-    ) : (
-      <>
-        <button onClick={() => handleMoveStepUp(step)} disabled={i === 0} className="action-btn">↑</button>
-        <button onClick={() => handleMoveStepDown(step)} disabled={i === steps.length - 1} className="action-btn">↓</button>
-        <button onClick={() => { setEditingStepId(step.id); setEditStepData({ ...step }); }} className="action-btn action-btn-blue">Edit</button>
-        <button onClick={() => handleDeleteStep(step.id)} className="action-btn action-btn-red">Delete</button>
-      </>
-    )}
-  </div>
-</td>
+                            <div className="action-buttons">
+                              {editingStepId === step.id ? (
+                                <>
+                                  <button onClick={() => handleUpdateStep(step.id)} className="action-btn action-btn-green">Save</button>
+                                  <button onClick={() => setEditingStepId(null)} className="action-btn">Cancel</button>
+                                </>
+                              ) : (
+                                <>
+                                  <button onClick={() => handleMoveStepUp(step)} disabled={i === 0} className="action-btn">↑</button>
+                                  <button onClick={() => handleMoveStepDown(step)} disabled={i === steps.length - 1} className="action-btn">↓</button>
+                                  <button onClick={() => { setEditingStepId(step.id); setEditStepData({ ...step }); }} className="action-btn action-btn-blue">Edit</button>
+                                  <button onClick={() => handleDeleteStep(step.id)} className="action-btn action-btn-red">Delete</button>
+                                </>
+                              )}
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -678,15 +716,15 @@ export default function HumorFlavorsPage() {
                   <label className="mb-10">Select Test Image</label>
                   <select
                     value={selectedTestImageId}
-                        onChange={(e) => setSelectedTestImageId(e.target.value)}
-                    >
-                 <option value="">-- Choose an image --</option>
-                 {images.filter(img => img.url).map((img) => (
-              <option key={img.id} value={img.id}>
-                   {img.url.substring(img.url.lastIndexOf('/') + 1)}
-         </option>
-             ))}
-            </select>
+                    onChange={(e) => setSelectedTestImageId(e.target.value)}
+                  >
+                    <option value="">-- Choose an image --</option>
+                    {images.filter(img => img.url).map((img) => (
+                      <option key={img.id} value={img.id}>
+                        {img.url.substring(img.url.lastIndexOf('/') + 1)}
+                      </option>
+                    ))}
+                  </select>
                   <button
                     onClick={handleTestFlavor}
                     disabled={testingFlavor || !selectedTestImageId}
