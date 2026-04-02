@@ -2,6 +2,7 @@
 
 import { requireSuperadmin, createSupabaseServerClient } from "@/lib/supabase/server";
 
+// Humor Flavors Management
 export async function getHumorFlavors() {
   await requireSuperadmin();
   const supabase = await createSupabaseServerClient();
@@ -184,9 +185,9 @@ export async function testHumorFlavorOnImage(
   }
 
   console.log("Testing flavor:", humorFlavorId, "with image:", imageId);
-  console.log("Auth token exists:", !!session.access_token);
 
   try {
+    // Try without humorFlavorId - API might use humor_flavor_mix table
     const response = await fetch("https://api.almostcrackd.ai/pipeline/generate_captions", {
       method: "POST",
       headers: {
@@ -194,14 +195,11 @@ export async function testHumorFlavorOnImage(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ 
-        imageId: imageId,
-        humorFlavorId: humorFlavorId 
+        imageId: imageId
       }),
     });
 
     console.log("Response status:", response.status);
-    console.log("Response headers:", Object.fromEntries(response.headers.entries()));
-
     const responseText = await response.text();
     console.log("Response body:", responseText);
 
