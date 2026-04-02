@@ -42,7 +42,6 @@ export async function deleteHumorFlavor(id: number) {
   await requireSuperadmin();
   const supabase = await createSupabaseServerClient();
 
-  // Delete flavor steps first (cascade)
   const { error: stepsError } = await supabase
     .from("humor_flavor_steps")
     .delete()
@@ -50,7 +49,6 @@ export async function deleteHumorFlavor(id: number) {
 
   if (stepsError) throw stepsError;
 
-  // Then delete flavor
   const { error: flavorError } = await supabase
     .from("humor_flavors")
     .delete()
@@ -60,7 +58,6 @@ export async function deleteHumorFlavor(id: number) {
   return true;
 }
 
-// Humor Flavor Steps Management
 export async function getHumorFlavorSteps(flavorId: number) {
   await requireSuperadmin();
   const supabase = await createSupabaseServerClient();
@@ -176,106 +173,117 @@ export async function reorderHumorFlavorStep(
 }
 
 export async function testHumorFlavorOnImage(
-    humorFlavorId: number,
-    imageId: string
-  ) {
-    await requireSuperadmin();
-    const supabase = await createSupabaseServerClient();
-  
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      return { success: false, error: "No auth token" };
-    }
-  
-    try {
-      const response = await fetch("https://api.almostcrackd.ai/pipeline/generate-captions-with-flavor", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ imageId, humorFlavorId }),
-      });
-  
-      if (!response.ok) {
-        return { success: false, error: `API failed: ${response.status}` };
-      }
-  
-      const result = await response.json();
-      return { success: true, data: result };
-    } catch (error) {
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Failed to test flavor" 
-      };
-    }
+  humorFlavorId: number,
+  imageId: string
+) {
+  await requireSuperadmin();
+  const supabase = await createSupabaseServerClient();
+
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    return { success: false, error: "No auth token" };
   }
 
-  export async function getImages() {
-    await requireSuperadmin();
-    const supabase = await createSupabaseServerClient();
-  
-    const { data, error } = await supabase
-      .from("images")
-      .select("id, url, is_public, created_datetime_utc")
-      .order("created_datetime_utc", { ascending: false });
-  
-    if (error) throw error;
-    return data || [];
+  console.log("Testing flavor:", humorFlavorId, "with image:", imageId);
+  console.log("Auth token exists:", !!session.access_token);
+
+  try {
+    const response = await fetch("https://api.almostcrackd.ai/pipeline/generate-captions-with-flavor", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ imageId, humorFlavorId }),
+    });
+
+    console.log("Response status:", response.status);
+    console.log("Response headers:", Object.fromEntries(response.headers.entries()));
+
+    const responseText = await response.text();
+    console.log("Response body:", responseText);
+
+    if (!response.ok) {
+      return { success: false, error: `API failed: ${response.status} - ${responseText}` };
+    }
+
+    const result = JSON.parse(responseText);
+    return { success: true, data: result };
+  } catch (error) {
+    console.error("Full error:", error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : "Failed to test flavor" 
+    };
+  }
 }
+
+export async function getImages() {
+  await requireSuperadmin();
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("images")
+    .select("id, url, is_public, created_datetime_utc")
+    .order("created_datetime_utc", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
 export async function updateHumorFlavor(
-    id: number,
-    description: string,
-    slug: string
-  ) {
-    await requireSuperadmin();
-    const supabase = await createSupabaseServerClient();
-  
-    const { data, error } = await supabase
-      .from("humor_flavors")
-      .update({ description, slug })
-      .eq("id", id)
-      .select();
-  
-    if (error) throw error;
-    return data?.[0] || null;
-  }
-  
-  export async function updateHumorFlavorStep(
-    id: number,
-    orderBy: number,
-    llmTemperature: number | null,
-    llmInputTypeId: number,
-    llmOutputTypeId: number,
-    llmModelId: number,
-    humorFlavorStepTypeId: number,
-    llmSystemPrompt: string,
-    llmUserPrompt: string,
-    description: string | null
-  ) {
-    await requireSuperadmin();
-    const supabase = await createSupabaseServerClient();
-  
-    const { data, error } = await supabase
-      .from("humor_flavor_steps")
-      .update({
-        order_by: orderBy,
-        llm_temperature: llmTemperature,
-        llm_input_type_id: llmInputTypeId,
-        llm_output_type_id: llmOutputTypeId,
-        llm_model_id: llmModelId,
-        humor_flavor_step_type_id: humorFlavorStepTypeId,
-        llm_system_prompt: llmSystemPrompt,
-        llm_user_prompt: llmUserPrompt,
-        description,
-      })
-      .eq("id", id)
-      .select();
-  
-    if (error) throw error;
-    return data?.[0] || null;
-  }
-  
+  id: number,
+  description: string,
+  slug: string
+) {
+  await requireSuperadmin();
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("humor_flavors")
+    .update({ description, slug })
+    .eq("id", id)
+    .select();
+
+  if (error) throw error;
+  return data?.[0] || null;
+}
+
+export async function updateHumorFlavorStep(
+  id: number,
+  orderBy: number,
+  llmTemperature: number | null,
+  llmInputTypeId: number,
+  llmOutputTypeId: number,
+  llmModelId: number,
+  humorFlavorStepTypeId: number,
+  llmSystemPrompt: string,
+  llmUserPrompt: string,
+  description: string | null
+) {
+  await requireSuperadmin();
+  const supabase = await createSupabaseServerClient();
+
+  const { data, error } = await supabase
+    .from("humor_flavor_steps")
+    .update({
+      order_by: orderBy,
+      llm_temperature: llmTemperature,
+      llm_input_type_id: llmInputTypeId,
+      llm_output_type_id: llmOutputTypeId,
+      llm_model_id: llmModelId,
+      humor_flavor_step_type_id: humorFlavorStepTypeId,
+      llm_system_prompt: llmSystemPrompt,
+      llm_user_prompt: llmUserPrompt,
+      description,
+    })
+    .eq("id", id)
+    .select();
+
+  if (error) throw error;
+  return data?.[0] || null;
+}
+
 export async function getCaptionsForFlavor(flavorId: number) {
   await requireSuperadmin();
   const supabase = await createSupabaseServerClient();
