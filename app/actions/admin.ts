@@ -2,7 +2,6 @@
 
 import { requireSuperadmin, createSupabaseServerClient } from "@/lib/supabase/server";
 
-// Humor Flavors Management
 export async function getHumorFlavors() {
   await requireSuperadmin();
   const supabase = await createSupabaseServerClient();
@@ -194,7 +193,10 @@ export async function testHumorFlavorOnImage(
         Authorization: `Bearer ${session.access_token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ imageId, humorFlavorId }),
+      body: JSON.stringify({ 
+        imageId: imageId,
+        humorFlavorId: humorFlavorId 
+      }),
     });
 
     console.log("Response status:", response.status);
