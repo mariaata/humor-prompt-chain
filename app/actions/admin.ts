@@ -188,7 +188,7 @@ export async function testHumorFlavorOnImage(
   console.log("Auth token exists:", !!session.access_token);
 
   try {
-    const response = await fetch("https://api.almostcrackd.ai/pipeline/generate-captions-with-flavor", {
+    const response = await fetch("https://api.almostcrackd.ai/pipeline/generate_captions", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${session.access_token}`,
