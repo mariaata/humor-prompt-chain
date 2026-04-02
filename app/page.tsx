@@ -13,7 +13,6 @@ import {
   updateHumorFlavorStep,
   deleteHumorFlavorStep,
   reorderHumorFlavorStep,
-  testHumorFlavorOnImage,
   getCaptionsForFlavor,
   getImages,
 } from "@/app/actions/admin";
@@ -343,13 +342,34 @@ export default function HumorFlavorsPage() {
     try {
       setTestingFlavor(true);
       setTestError(null);
-      const result = await testHumorFlavorOnImage(selectedFlavorId, selectedTestImageId);
-      if (result.success) {
-        setTestResults(result.data);
-        setShowTestResults(true);
-      } else {
-        setTestError(result.error || "Failed to test flavor");
+      
+      // Get session from client-side Supabase
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session?.access_token) {
+        setTestError("Not authenticated");
+        return;
       }
+  
+      // Call API directly from client (like your friend does)
+      const response = await fetch("https://api.almostcrackd.ai/pipeline/generate_captions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ imageId: selectedTestImageId }),
+      });
+  
+      if (!response.ok) {
+        const errorText = await response.text();
+        setTestError(`API failed: ${response.status} - ${errorText}`);
+        return;
+      }
+  
+      const result = await response.json();
+      setTestResults(result);
+      setShowTestResults(true);
     } catch (err) {
       setTestError(err instanceof Error ? err.message : "Failed to test flavor");
     } finally {

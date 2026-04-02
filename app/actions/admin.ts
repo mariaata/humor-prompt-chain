@@ -172,52 +172,6 @@ export async function reorderHumorFlavorStep(
   return true;
 }
 
-export async function testHumorFlavorOnImage(
-  humorFlavorId: number,
-  imageId: string
-) {
-  await requireSuperadmin();
-  const supabase = await createSupabaseServerClient();
-
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.access_token) {
-    return { success: false, error: "No auth token" };
-  }
-
-  console.log("Testing flavor:", humorFlavorId, "with image:", imageId);
-
-  try {
-    // Try without humorFlavorId - API might use humor_flavor_mix table
-    const response = await fetch("https://api.almostcrackd.ai/pipeline/generate_captions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${session.access_token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ 
-        imageId: imageId
-      }),
-    });
-
-    console.log("Response status:", response.status);
-    const responseText = await response.text();
-    console.log("Response body:", responseText);
-
-    if (!response.ok) {
-      return { success: false, error: `API failed: ${response.status} - ${responseText}` };
-    }
-
-    const result = JSON.parse(responseText);
-    return { success: true, data: result };
-  } catch (error) {
-    console.error("Full error:", error);
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : "Failed to test flavor" 
-    };
-  }
-}
-
 export async function getImages() {
   await requireSuperadmin();
   const supabase = await createSupabaseServerClient();
