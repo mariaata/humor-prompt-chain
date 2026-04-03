@@ -100,7 +100,6 @@ export default function HumorFlavorsPage() {
   const [testResults, setTestResults] = useState<any>(null);
   const [testError, setTestError] = useState<string | null>(null);
 
-  // Check auth on mount
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
@@ -638,70 +637,98 @@ export default function HumorFlavorsPage() {
                     <tbody>
                       {steps.map((step, i) => (
                         <tr key={step.id}>
-                          <td>
-                            {editingStepId === step.id ? (
-                              <input
-                                type="number"
-                                value={editStepData.order_by ?? step.order_by}
-                                onChange={(e) => setEditStepData({ ...editStepData, order_by: parseInt(e.target.value) })}
-                                style={{width: '50px'}}
-                              />
-                            ) : (
-                              step.order_by
-                            )}
-                          </td>
-                          <td>
-                            {editingStepId === step.id ? (
-                              <input
-                                type="number"
-                                step="0.1"
-                                value={editStepData.llm_temperature ?? step.llm_temperature ?? 0.7}
-                                onChange={(e) => setEditStepData({ ...editStepData, llm_temperature: parseFloat(e.target.value) })}
-                                style={{width: '60px'}}
-                              />
-                            ) : (
-                              step.llm_temperature?.toFixed(2)
-                            )}
-                          </td>
-                          <td style={{maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis'}}>
-                            {editingStepId === step.id ? (
-                              <textarea
-                                value={editStepData.llm_system_prompt ?? step.llm_system_prompt}
-                                onChange={(e) => setEditStepData({ ...editStepData, llm_system_prompt: e.target.value })}
-                                rows={2}
-                              />
-                            ) : (
-                              step.llm_system_prompt.substring(0, 100) + '...'
-                            )}
-                          </td>
-                          <td style={{maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis'}}>
-                            {editingStepId === step.id ? (
-                              <textarea
-                                value={editStepData.llm_user_prompt ?? step.llm_user_prompt}
-                                onChange={(e) => setEditStepData({ ...editStepData, llm_user_prompt: e.target.value })}
-                                rows={2}
-                              />
-                            ) : (
-                              step.llm_user_prompt.substring(0, 100) + '...'
-                            )}
-                          </td>
-                          <td>
-                            <div className="action-buttons">
-                              {editingStepId === step.id ? (
-                                <>
-                                  <button onClick={() => handleUpdateStep(step.id)} className="action-btn action-btn-green">Save</button>
-                                  <button onClick={() => setEditingStepId(null)} className="action-btn">Cancel</button>
-                                </>
-                              ) : (
-                                <>
+                          {editingStepId === step.id ? (
+                            <>
+                              <td colSpan={5}>
+                                <div style={{padding: '10px'}}>
+                                  <div style={{display: 'flex', gap: '5px', marginBottom: '10px'}}>
+                                    <input
+                                      type="number"
+                                      placeholder="Model ID"
+                                      value={editStepData.llm_model_id ?? step.llm_model_id}
+                                      onChange={(e) => setEditStepData({ ...editStepData, llm_model_id: parseInt(e.target.value) })}
+                                      style={{width: '25%'}}
+                                    />
+                                    <input
+                                      type="number"
+                                      placeholder="Input Type"
+                                      value={editStepData.llm_input_type_id ?? step.llm_input_type_id}
+                                      onChange={(e) => setEditStepData({ ...editStepData, llm_input_type_id: parseInt(e.target.value) })}
+                                      style={{width: '25%'}}
+                                    />
+                                    <input
+                                      type="number"
+                                      placeholder="Output Type"
+                                      value={editStepData.llm_output_type_id ?? step.llm_output_type_id}
+                                      onChange={(e) => setEditStepData({ ...editStepData, llm_output_type_id: parseInt(e.target.value) })}
+                                      style={{width: '25%'}}
+                                    />
+                                    <input
+                                      type="number"
+                                      placeholder="Step Type"
+                                      value={editStepData.humor_flavor_step_type_id ?? step.humor_flavor_step_type_id}
+                                      onChange={(e) => setEditStepData({ ...editStepData, humor_flavor_step_type_id: parseInt(e.target.value) })}
+                                      style={{width: '25%'}}
+                                    />
+                                  </div>
+                                  <div style={{display: 'flex', gap: '10px', marginBottom: '10px'}}>
+                                    <input
+                                      type="number"
+                                      placeholder="Order"
+                                      value={editStepData.order_by ?? step.order_by}
+                                      onChange={(e) => setEditStepData({ ...editStepData, order_by: parseInt(e.target.value) })}
+                                      style={{width: '50%'}}
+                                    />
+                                    <input
+                                      type="number"
+                                      step="0.1"
+                                      placeholder="Temperature"
+                                      value={editStepData.llm_temperature ?? step.llm_temperature ?? 0.7}
+                                      onChange={(e) => setEditStepData({ ...editStepData, llm_temperature: parseFloat(e.target.value) })}
+                                      style={{width: '50%'}}
+                                    />
+                                  </div>
+                                  <textarea
+                                    placeholder="System Prompt"
+                                    value={editStepData.llm_system_prompt ?? step.llm_system_prompt}
+                                    onChange={(e) => setEditStepData({ ...editStepData, llm_system_prompt: e.target.value })}
+                                    rows={3}
+                                    style={{width: '100%', marginBottom: '10px'}}
+                                  />
+                                  <textarea
+                                    placeholder="User Prompt"
+                                    value={editStepData.llm_user_prompt ?? step.llm_user_prompt}
+                                    onChange={(e) => setEditStepData({ ...editStepData, llm_user_prompt: e.target.value })}
+                                    rows={3}
+                                    style={{width: '100%', marginBottom: '10px'}}
+                                  />
+                                  <div className="action-buttons">
+                                    <button onClick={() => handleUpdateStep(step.id)} className="action-btn action-btn-green">Save</button>
+                                    <button onClick={() => setEditingStepId(null)} className="action-btn">Cancel</button>
+                                  </div>
+                                </div>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td>{step.order_by}</td>
+                              <td>{step.llm_temperature?.toFixed(2)}</td>
+                              <td style={{maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                                {step.llm_system_prompt.substring(0, 100) + '...'}
+                              </td>
+                              <td style={{maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                                {step.llm_user_prompt.substring(0, 100) + '...'}
+                              </td>
+                              <td>
+                                <div className="action-buttons">
                                   <button onClick={() => handleMoveStepUp(step)} disabled={i === 0} className="action-btn">↑</button>
                                   <button onClick={() => handleMoveStepDown(step)} disabled={i === steps.length - 1} className="action-btn">↓</button>
                                   <button onClick={() => { setEditingStepId(step.id); setEditStepData({ ...step }); }} className="action-btn action-btn-blue">Edit</button>
                                   <button onClick={() => handleDeleteStep(step.id)} className="action-btn action-btn-red">Delete</button>
-                                </>
-                              )}
-                            </div>
-                          </td>
+                                </div>
+                              </td>
+                            </>
+                          )}
                         </tr>
                       ))}
                     </tbody>
