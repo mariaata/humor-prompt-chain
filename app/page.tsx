@@ -334,39 +334,33 @@ export default function HumorFlavorsPage() {
     }
   }
 
-  async function handleTestFlavor() {
-    if (!selectedFlavorId || !selectedTestImageId) {
-      setTestError("Please select a flavor and image");
-      return;
-    }
+  async function testFlavorAction(imageId: string, flavorId: number) {
     try {
       setTestingFlavor(true);
       setTestError(null);
       
-      // Get session from client-side Supabase
       const { data: { session } } = await supabase.auth.getSession();
-      
       if (!session?.access_token) {
-        setTestError("Not authenticated");
+        setTestError("No valid session found. Please log in again.");
         return;
       }
-  
-      // Call API directly from client (like your friend does)
-      const response = await fetch("https://api.almostcrackd.ai/pipeline/generate_captions", {
+      
+      const response = await fetch("https://api.almostcrackd.ai/pipeline/generate-captions", {
         method: "POST",
+        cache: "no-store",
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          "Authorization": `Bearer ${session.access_token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ imageId: selectedTestImageId }),
+        body: JSON.stringify({ imageId, humorFlavorId: flavorId }),
       });
-  
+      
       if (!response.ok) {
         const errorText = await response.text();
         setTestError(`API failed: ${response.status} - ${errorText}`);
         return;
       }
-  
+
       const result = await response.json();
       setTestResults(result);
       setShowTestResults(true);
@@ -375,6 +369,15 @@ export default function HumorFlavorsPage() {
     } finally {
       setTestingFlavor(false);
     }
+  }
+
+  async function handleTestFlavor() {
+    if (!selectedFlavorId || !selectedTestImageId) {
+      setTestError("Please select a flavor and image");
+      return;
+    }
+    
+    await testFlavorAction(selectedTestImageId, selectedFlavorId);
   }
 
   if (authLoading) {
