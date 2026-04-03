@@ -638,78 +638,97 @@ export default function HumorFlavorsPage() {
                       {steps.map((step, i) => (
                         <tr key={step.id}>
                           {editingStepId === step.id ? (
-                            <>
-                              <td colSpan={5}>
-                                <div style={{padding: '10px'}}>
-                                  <div style={{display: 'flex', gap: '5px', marginBottom: '10px'}}>
-                                    <input
-                                      type="number"
-                                      placeholder="Model ID"
-                                      value={editStepData.llm_model_id ?? step.llm_model_id}
-                                      onChange={(e) => setEditStepData({ ...editStepData, llm_model_id: parseInt(e.target.value) })}
-                                      style={{width: '25%'}}
-                                    />
-                                    <input
-                                      type="number"
-                                      placeholder="Input Type"
-                                      value={editStepData.llm_input_type_id ?? step.llm_input_type_id}
-                                      onChange={(e) => setEditStepData({ ...editStepData, llm_input_type_id: parseInt(e.target.value) })}
-                                      style={{width: '25%'}}
-                                    />
-                                    <input
-                                      type="number"
-                                      placeholder="Output Type"
-                                      value={editStepData.llm_output_type_id ?? step.llm_output_type_id}
-                                      onChange={(e) => setEditStepData({ ...editStepData, llm_output_type_id: parseInt(e.target.value) })}
-                                      style={{width: '25%'}}
-                                    />
-                                    <input
-                                      type="number"
-                                      placeholder="Step Type"
-                                      value={editStepData.humor_flavor_step_type_id ?? step.humor_flavor_step_type_id}
-                                      onChange={(e) => setEditStepData({ ...editStepData, humor_flavor_step_type_id: parseInt(e.target.value) })}
-                                      style={{width: '25%'}}
-                                    />
-                                  </div>
-                                  <div style={{display: 'flex', gap: '10px', marginBottom: '10px'}}>
-                                    <input
-                                      type="number"
-                                      placeholder="Order"
-                                      value={editStepData.order_by ?? step.order_by}
-                                      onChange={(e) => setEditStepData({ ...editStepData, order_by: parseInt(e.target.value) })}
-                                      style={{width: '50%'}}
-                                    />
-                                    <input
-                                      type="number"
-                                      step="0.1"
-                                      placeholder="Temperature"
-                                      value={editStepData.llm_temperature ?? step.llm_temperature ?? 0.7}
-                                      onChange={(e) => setEditStepData({ ...editStepData, llm_temperature: parseFloat(e.target.value) })}
-                                      style={{width: '50%'}}
-                                    />
-                                  </div>
-                                  <textarea
-                                    placeholder="System Prompt"
-                                    value={editStepData.llm_system_prompt ?? step.llm_system_prompt}
-                                    onChange={(e) => setEditStepData({ ...editStepData, llm_system_prompt: e.target.value })}
-                                    rows={3}
-                                    style={{width: '100%', marginBottom: '10px'}}
-                                  />
-                                  <textarea
-                                    placeholder="User Prompt"
-                                    value={editStepData.llm_user_prompt ?? step.llm_user_prompt}
-                                    onChange={(e) => setEditStepData({ ...editStepData, llm_user_prompt: e.target.value })}
-                                    rows={3}
-                                    style={{width: '100%', marginBottom: '10px'}}
-                                  />
-                                  <div className="action-buttons">
-                                    <button onClick={() => handleUpdateStep(step.id)} className="action-btn action-btn-green">Save</button>
-                                    <button onClick={() => setEditingStepId(null)} className="action-btn">Cancel</button>
-                                  </div>
-                                </div>
-                              </td>
-                            </>
-                          ) : (
+  <>
+    <td colSpan={5}>
+      <div style={{padding: '10px'}}>
+        <div style={{marginBottom: '10px'}}>
+          <label style={{display: 'block', marginBottom: '5px', fontWeight: 'bold'}}>Configuration IDs:</label>
+          <div style={{display: 'flex', gap: '10px'}}>
+            <div style={{flex: 1}}>
+              <label style={{display: 'block', fontSize: '12px', marginBottom: '3px'}}>Model ID</label>
+              <input
+                type="number"
+                value={editStepData.llm_model_id ?? step.llm_model_id}
+                onChange={(e) => setEditStepData({ ...editStepData, llm_model_id: parseInt(e.target.value) })}
+                style={{width: '100%'}}
+              />
+            </div>
+            <div style={{flex: 1}}>
+              <label style={{display: 'block', fontSize: '12px', marginBottom: '3px'}}>Input Type ID</label>
+              <input
+                type="number"
+                value={editStepData.llm_input_type_id ?? step.llm_input_type_id}
+                onChange={(e) => setEditStepData({ ...editStepData, llm_input_type_id: parseInt(e.target.value) })}
+                style={{width: '100%'}}
+              />
+            </div>
+            <div style={{flex: 1}}>
+              <label style={{display: 'block', fontSize: '12px', marginBottom: '3px'}}>Output Type ID</label>
+              <input
+                type="number"
+                value={editStepData.llm_output_type_id ?? step.llm_output_type_id}
+                onChange={(e) => setEditStepData({ ...editStepData, llm_output_type_id: parseInt(e.target.value) })}
+                style={{width: '100%'}}
+              />
+            </div>
+            <div style={{flex: 1}}>
+              <label style={{display: 'block', fontSize: '12px', marginBottom: '3px'}}>Step Type ID</label>
+              <input
+                type="number"
+                value={editStepData.humor_flavor_step_type_id ?? step.humor_flavor_step_type_id}
+                onChange={(e) => setEditStepData({ ...editStepData, humor_flavor_step_type_id: parseInt(e.target.value) })}
+                style={{width: '100%'}}
+              />
+            </div>
+          </div>
+        </div>
+        <div style={{display: 'flex', gap: '10px', marginBottom: '10px'}}>
+          <div style={{flex: 1}}>
+            <label style={{display: 'block', fontSize: '12px', marginBottom: '3px'}}>Order</label>
+            <input
+              type="number"
+              value={editStepData.order_by ?? step.order_by}
+              onChange={(e) => setEditStepData({ ...editStepData, order_by: parseInt(e.target.value) })}
+              style={{width: '100%'}}
+            />
+          </div>
+          <div style={{flex: 1}}>
+            <label style={{display: 'block', fontSize: '12px', marginBottom: '3px'}}>Temperature</label>
+            <input
+              type="number"
+              step="0.1"
+              value={editStepData.llm_temperature ?? step.llm_temperature ?? 0.7}
+              onChange={(e) => setEditStepData({ ...editStepData, llm_temperature: parseFloat(e.target.value) })}
+              style={{width: '100%'}}
+            />
+          </div>
+        </div>
+        <div style={{marginBottom: '10px'}}>
+          <label style={{display: 'block', fontSize: '12px', marginBottom: '3px'}}>System Prompt</label>
+          <textarea
+            value={editStepData.llm_system_prompt ?? step.llm_system_prompt}
+            onChange={(e) => setEditStepData({ ...editStepData, llm_system_prompt: e.target.value })}
+            rows={3}
+            style={{width: '100%'}}
+          />
+        </div>
+        <div style={{marginBottom: '10px'}}>
+          <label style={{display: 'block', fontSize: '12px', marginBottom: '3px'}}>User Prompt</label>
+          <textarea
+            value={editStepData.llm_user_prompt ?? step.llm_user_prompt}
+            onChange={(e) => setEditStepData({ ...editStepData, llm_user_prompt: e.target.value })}
+            rows={3}
+            style={{width: '100%'}}
+          />
+        </div>
+        <div className="action-buttons">
+          <button onClick={() => handleUpdateStep(step.id)} className="action-btn action-btn-green">Save</button>
+          <button onClick={() => setEditingStepId(null)} className="action-btn">Cancel</button>
+        </div>
+      </div>
+    </td>
+  </>
+) : (
                             <>
                               <td>{step.order_by}</td>
                               <td>{step.llm_temperature?.toFixed(2)}</td>
