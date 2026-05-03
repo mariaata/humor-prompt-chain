@@ -100,6 +100,10 @@ export default function HumorFlavorsPage() {
   const [testResults, setTestResults] = useState<any>(null);
   const [testError, setTestError] = useState<string | null>(null);
 
+  const [duplicatingFlavorId, setDuplicatingFlavorId] = useState<number | null>(null);
+  const [duplicateSlug, setDuplicateSlug] = useState("");
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (!session) {
@@ -229,6 +233,84 @@ export default function HumorFlavorsPage() {
       loadFlavors();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete flavor");
+    }
+  }
+
+  async function handleDuplicateFlavor(flavorId: number) {
+    if (!duplicateSlug.trim()) {
+      setError("Please enter a slug for the duplicated flavor");
+      return;
+    }
+
+    try {
+      setError(null);
+      const originalFlavor = flavors.find(f => f.id === flavorId);
+      if (!originalFlavor) {
+        setError("Original flavor not found");
+        return;
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) {
+        setError("Not authenticated");
+        return;
+      }
+
+      const { data: newFlavor, error: flavorError } = await supabase
+        .from('humor_flavors')
+        .insert({
+          slug: duplicateSlug.trim(),
+          description: originalFlavor.description,
+          created_by_user_id: session.user.id,
+          modified_by_user_id: session.user.id,
+          created_datetime_utc: new Date().toISOString(),
+          modified_datetime_utc: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (flavorError) throw flavorError;
+
+      const { data: originalSteps, error: stepsError } = await supabase
+        .from('humor_flavor_steps')
+        .select('*')
+        .eq('humor_flavor_id', flavorId)
+        .order('order_by', { ascending: true });
+
+      if (stepsError) throw stepsError;
+
+      if (originalSteps && originalSteps.length > 0) {
+        const newSteps = originalSteps.map(step => ({
+          humor_flavor_id: newFlavor.id,
+          order_by: step.order_by,
+          llm_temperature: step.llm_temperature,
+          llm_input_type_id: step.llm_input_type_id,
+          llm_output_type_id: step.llm_output_type_id,
+          llm_model_id: step.llm_model_id,
+          humor_flavor_step_type_id: step.humor_flavor_step_type_id,
+          llm_system_prompt: step.llm_system_prompt,
+          llm_user_prompt: step.llm_user_prompt,
+          description: step.description,
+          created_by_user_id: session.user.id,
+          modified_by_user_id: session.user.id,
+          created_datetime_utc: new Date().toISOString(),
+          modified_datetime_utc: new Date().toISOString()
+        }));
+
+        const { error: insertStepsError } = await supabase
+          .from('humor_flavor_steps')
+          .insert(newSteps);
+
+        if (insertStepsError) throw insertStepsError;
+      }
+
+      alert(`Successfully duplicated "${originalFlavor.slug}" as "${duplicateSlug}" with ${originalSteps?.length || 0} steps!`);
+      setShowDuplicateModal(false);
+      setDuplicateSlug("");
+      setDuplicatingFlavorId(null);
+      loadFlavors();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to duplicate flavor");
     }
   }
 
@@ -530,6 +612,16 @@ export default function HumorFlavorsPage() {
                             >
                               View Steps
                             </button>
+                            <button
+                              onClick={() => {
+                                setDuplicatingFlavorId(flavor.id);
+                                setDuplicateSlug(`${flavor.slug}-copy`);
+                                setShowDuplicateModal(true);
+                              }}
+                              className="action-btn action-btn-purple"
+                            >
+                              📋 Duplicate
+                            </button>
                             <button onClick={() => handleDeleteFlavor(flavor.id)} className="action-btn action-btn-red">
                               Delete
                             </button>
@@ -820,6 +912,60 @@ export default function HumorFlavorsPage() {
             </div>
             <div className="modal-body">
               <pre>{JSON.stringify(testResults, null, 2)}</pre>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDuplicateModal && duplicatingFlavorId && (
+        <div className="modal">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Duplicate Humor Flavor</h2>
+              <button onClick={() => {
+                setShowDuplicateModal(false);
+                setDuplicateSlug("");
+                setDuplicatingFlavorId(null);
+              }} style={{background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer'}}>
+                ✕
+              </button>
+            </div>
+            <div className="modal-body">
+              <p style={{marginBottom: '15px'}}>
+                Duplicating: <strong>{flavors.find(f => f.id === duplicatingFlavorId)?.slug}</strong>
+              </p>
+              <label style={{display: 'block', marginBottom: '5px', fontWeight: 'bold'}}>
+                New Flavor Slug
+              </label>
+              <input
+                type="text"
+                value={duplicateSlug}
+                onChange={(e) => setDuplicateSlug(e.target.value)}
+                placeholder="e.g., my-flavor-copy"
+                style={{width: '100%', marginBottom: '15px'}}
+              />
+              <p style={{fontSize: '12px', color: '#999', marginBottom: '15px'}}>
+                Use lowercase letters, numbers, and hyphens only
+              </p>
+              <div style={{display: 'flex', gap: '10px'}}>
+                <button
+                  onClick={() => handleDuplicateFlavor(duplicatingFlavorId)}
+                  className="btn btn-purple"
+                  style={{flex: 1}}
+                >
+                  Duplicate Flavor
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDuplicateModal(false);
+                    setDuplicateSlug("");
+                    setDuplicatingFlavorId(null);
+                  }}
+                  className="btn btn-gray"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </div>
         </div>
